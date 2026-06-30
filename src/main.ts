@@ -23,7 +23,16 @@ import { track, verdict, isArchived, isIncomeOnly } from './triage';
 import { jobsListHTML, chipsFor } from './components';
 import { generateCoverLetter } from './coverletter';
 import { icon } from './icons';
-import { escapeHtml, copyText, downloadText, openPdf, toast } from './util';
+import {
+  escapeHtml,
+  copyText,
+  downloadText,
+  openPdf,
+  reservePdfTab,
+  closeTab,
+  toast,
+  confirmDialog,
+} from './util';
 import type { Job, Status, Channel, Commute, Track } from './types';
 
 registerSW({ immediate: true });
@@ -312,9 +321,10 @@ function renderMaterials(): void {
 }
 
 // ---------------- Detail view ----------------
-function renderDetail(id: string): void {
+function renderDetail(id: string, keepScroll = false): void {
   const job = getJob(id);
   if (!job) return;
+  const prevScroll = keepScroll ? detailEl.scrollTop : 0;
   const letter = generateCoverLetter({
     employer: job.employer,
     title: job.title,
@@ -392,7 +402,7 @@ function renderDetail(id: string): void {
     </div>
   `;
   detailEl.classList.add('open');
-  detailEl.scrollTop = 0;
+  detailEl.scrollTop = prevScroll;
 }
 
 function formatReq(text: string): string {
@@ -432,9 +442,9 @@ function openAddEdit(id?: string): void {
       <span class="t">${id ? 'Edit job' : 'Add job'}</span>
       <button class="save" data-action="save-job">Save</button>
     </div>
-    <div class="field"><label>Title</label><input id="f_title" value="${escapeHtml(j.title || '')}" /></div>
-    <div class="field"><label>Employer</label><input id="f_emp" value="${escapeHtml(j.employer || '')}" /></div>
-    <div class="field"><label>Location</label><input id="f_loc" value="${escapeHtml(j.location || '')}" /></div>
+    <div class="field"><label>Title</label><input id="f_title" autocapitalize="words" value="${escapeHtml(j.title || '')}" /></div>
+    <div class="field"><label>Employer</label><input id="f_emp" autocapitalize="words" value="${escapeHtml(j.employer || '')}" /></div>
+    <div class="field"><label>Location</label><input id="f_loc" autocapitalize="words" value="${escapeHtml(j.location || '')}" /></div>
     <div class="field">
       <div class="field-row">
         <div><label>Commute</label><select id="f_commute">${commuteOptions}</select></div>
@@ -450,7 +460,7 @@ function openAddEdit(id?: string): void {
         <div><label>Status</label><select id="f_status">${statusOptions}</select></div>
       </div>
     </div>
-    <div class="field"><label>Apply link or email</label><input id="f_url" value="${escapeHtml(
+    <div class="field"><label>Apply link or email</label><input id="f_url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="https://…  or  name@company.com" value="${escapeHtml(
       j.url || ''
     )}" /></div>
 
@@ -579,14 +589,26 @@ function closeSheet(): void {
 }
 
 // ---------------- Resume generation ----------------
-async function doResume(job: Job): Promise<void> {
+// Disable a button while an async action runs (prevents double-tap).
+async function withBusy(btn: HTMLElement, fn: () => Promise<void>): Promise<void> {
+  if (btn.hasAttribute('disabled')) return;
+  btn.setAttribute('disabled', '');
+  try {
+    await fn();
+  } finally {
+    btn.removeAttribute('disabled');
+  }
+}
+
+async function doResume(job: Job, win?: Window | null): Promise<void> {
   toast('Generating résumé…');
   try {
     const { generateResume } = await import('./resume');
     const bytes = await generateResume(job);
-    openPdf(bytes, 'Rudrakumar Patel.pdf');
+    openPdf(bytes, 'Rudrakumar Patel.pdf', win);
   } catch (e) {
     console.error(e);
+    closeTab(win);
     toast('Could not generate PDF');
   }
 }
@@ -609,6 +631,8 @@ document.addEventListener('click', async (ev) => {
   switch (action) {
     case 'tab':
       currentTab = target.dataset.tab as Tab;
+      window.scrollTo(0, 0);
+      topbar.classList.remove('show');
       render();
       break;
     case 'seg':
@@ -645,7 +669,7 @@ document.addEventListener('click', async (ev) => {
     case 'toggle-req':
       if (id) {
         toggleRequirement(id, Number(target.dataset.i));
-        renderDetail(id);
+        renderDetail(id, true);
       }
       break;
     case 'set-status':
@@ -663,11 +687,17 @@ document.addEventListener('click', async (ev) => {
     case 'resume-job':
       if (id) {
         const j = getJob(id);
-        if (j) await doResume(j);
+        if (j) {
+          const win = reservePdfTab(); // open the tab inside the gesture (iOS)
+          await withBusy(target, () => doResume(j, win));
+        }
       }
       break;
     case 'resume-base':
-      await doResume(baseResumeJob(target.dataset.track as Track));
+      {
+        const win = reservePdfTab();
+        await withBusy(target, () => doResume(baseResumeJob(target.dataset.track as Track), win));
+      }
       break;
     case 'copy-letter':
       {
@@ -681,6 +711,7 @@ document.addEventListener('click', async (ev) => {
     // Cover letter generator (materials)
     case 'cl-track':
       coverState.track = target.dataset.track as Track;
+      coverState.text = '';
       renderMaterials();
       break;
     case 'cl-generate':
@@ -705,7 +736,16 @@ document.addEventListener('click', async (ev) => {
       toast('Backup downloaded');
       break;
     case 'import':
-      (document.getElementById('importFile') as HTMLInputElement)?.click();
+      {
+        const proceed =
+          allJobs().length === 0 ||
+          (await confirmDialog({
+            title: 'Import backup?',
+            message: 'This replaces all current jobs with the contents of the backup file.',
+            confirm: 'Choose file',
+          }));
+        if (proceed) (document.getElementById('importFile') as HTMLInputElement)?.click();
+      }
       break;
     // Add/Edit sheet
     case 'save-job':
@@ -713,9 +753,18 @@ document.addEventListener('click', async (ev) => {
       break;
     case 'delete-job':
       if (id) {
-        deleteJob(id);
-        closeSheet();
-        toast('Deleted');
+        const job = getJob(id);
+        const ok = await confirmDialog({
+          title: 'Delete this job?',
+          message: job ? `“${job.title}” will be removed permanently.` : undefined,
+          confirm: 'Delete',
+          danger: true,
+        });
+        if (ok) {
+          deleteJob(id);
+          closeSheet();
+          toast('Deleted');
+        }
       }
       break;
     case 'add-req':
@@ -767,12 +816,13 @@ document.addEventListener('change', (ev) => {
     const sel = t as HTMLSelectElement;
     const id = t.closest('[data-action]')!.getAttribute('data-id')!;
     setStatus(id, sel.value as Status);
-    renderDetail(id);
+    renderDetail(id, true);
     return;
   }
   if (action === 'cl-job') {
     const sel = t as HTMLSelectElement;
     coverState.jobId = sel.value;
+    coverState.text = '';
     const job = getJob(sel.value);
     if (job) {
       coverState.employer = job.employer;
@@ -807,6 +857,23 @@ document.addEventListener('input', (ev) => {
   if (t.getAttribute('data-action') === 'req-text') {
     const i = Number(t.getAttribute('data-i'));
     if (sheetDraftReqs[i]) sheetDraftReqs[i].text = (t as HTMLInputElement).value;
+  }
+});
+
+// Enter in the "add requirement" field adds it without reaching for the + button.
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Enter') return;
+  const t = ev.target as HTMLElement;
+  if (t.id === 'reqNew') {
+    ev.preventDefault();
+    const input = t as HTMLInputElement;
+    const v = input.value.trim();
+    if (v) {
+      sheetDraftReqs.push({ text: v, done: false });
+      input.value = '';
+      renderDraftReqs();
+      input.focus();
+    }
   }
 });
 

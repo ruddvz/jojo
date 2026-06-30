@@ -23,25 +23,53 @@ export function escapeHtml(s: string): string {
 
 let lastBlobUrl: string | null = null;
 
-// Open a generated PDF reliably on iOS Safari: blob URL in a new tab + best-effort download.
-export function openPdf(bytes: Uint8Array, filename: string): void {
+// Reserve a blank tab SYNCHRONOUSLY inside the tap handler. iOS Safari blocks
+// window.open() called after an await, so we open the tab first and only set
+// its URL once the (async) PDF is ready. Returns null if the popup was blocked.
+export function reservePdfTab(): Window | null {
+  const win = window.open('', '_blank');
+  if (win) {
+    try {
+      win.document.write(
+        '<!doctype html><title>Résumé…</title><meta name="viewport" content="width=device-width,initial-scale=1">' +
+          '<body style="margin:0;font:16px -apple-system,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#666">Generating résumé…</body>'
+      );
+    } catch {
+      /* cross-origin guard; ignore */
+    }
+  }
+  return win;
+}
+
+// Point the reserved tab at the generated PDF (blob URL is iOS-savable; data: is not).
+// Falls back to a fresh open + a download anchor for desktop/Android.
+export function openPdf(bytes: Uint8Array, filename: string, win?: Window | null): void {
   if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
   const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   lastBlobUrl = url;
 
-  // New tab (works on iOS where data: URLs cannot be saved).
-  const win = window.open(url, '_blank');
+  if (win && !win.closed) {
+    win.location.href = url;
+  } else {
+    window.open(url, '_blank');
+  }
 
-  // Best-effort download for desktop / Android.
+  // Best-effort download for desktop / Android (ignored by iOS Safari).
   const a = el('a', { href: url, download: filename });
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   a.remove();
+}
 
-  if (!win) {
-    // Popup blocked: keep the URL reachable via the same anchor (already clicked).
+export function closeTab(win?: Window | null): void {
+  if (win && !win.closed) {
+    try {
+      win.close();
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -76,6 +104,43 @@ export async function copyText(text: string): Promise<boolean> {
       return false;
     }
   }
+}
+
+// Styled confirm dialog (iOS-alert feel) — resolves true/false.
+export function confirmDialog(opts: {
+  title: string;
+  message?: string;
+  confirm?: string;
+  cancel?: string;
+  danger?: boolean;
+}): Promise<boolean> {
+  return new Promise((resolve) => {
+    const scrim = el('div', { class: 'confirm-scrim' });
+    const card = el('div', { class: 'confirm-card' });
+    card.innerHTML = `
+      <div class="confirm-title">${escapeHtml(opts.title)}</div>
+      ${opts.message ? `<div class="confirm-msg">${escapeHtml(opts.message)}</div>` : ''}
+      <div class="confirm-actions">
+        <button class="confirm-btn cancel">${escapeHtml(opts.cancel || 'Cancel')}</button>
+        <button class="confirm-btn go ${opts.danger ? 'danger' : ''}">${escapeHtml(
+          opts.confirm || 'Confirm'
+        )}</button>
+      </div>`;
+    scrim.append(card);
+    document.body.append(scrim);
+    requestAnimationFrame(() => scrim.classList.add('open'));
+
+    const close = (result: boolean) => {
+      scrim.classList.remove('open');
+      setTimeout(() => scrim.remove(), 220);
+      resolve(result);
+    };
+    card.querySelector('.cancel')!.addEventListener('click', () => close(false));
+    card.querySelector('.go')!.addEventListener('click', () => close(true));
+    scrim.addEventListener('click', (e) => {
+      if (e.target === scrim) close(false);
+    });
+  });
 }
 
 let toastTimer: number | undefined;

@@ -90,11 +90,6 @@ export function upsertJob(job: Job): void {
   emit();
 }
 
-export function addJobs(newJobs: Job[]): void {
-  jobs.push(...newJobs);
-  emit();
-}
-
 // Identity for de-duplication: same title + employer (case/space-insensitive).
 function jobKey(j: { title: string; employer: string }): string {
   return `${j.title.trim().toLowerCase()}|${j.employer.trim().toLowerCase()}`;
@@ -125,10 +120,16 @@ export function deleteJob(id: string): void {
   emit();
 }
 
+const ARCHIVED_STATUSES: Status[] = ['applied', 'interview', 'offer', 'closed'];
+
 export function setStatus(id: string, status: Status): void {
   const job = getJob(id);
   if (!job) return;
   job.status = status;
+  // Stamp the date it left the active pipeline so it sorts and shows correctly.
+  if (ARCHIVED_STATUSES.includes(status) && job.appliedAt === 0) {
+    job.appliedAt = Date.now();
+  }
   emit();
 }
 
