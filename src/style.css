@@ -102,7 +102,7 @@ select {
 }
 .view {
   display: none;
-  padding: calc(var(--safe-top) + var(--bar-h) + 4px) 0 calc(var(--safe-bottom) + var(--tab-h) + 34px);
+  padding: calc(var(--safe-top) + 8px) 0 calc(var(--safe-bottom) + var(--tab-h) + 34px);
   min-height: 100vh;
 }
 .view.active {
@@ -135,6 +135,7 @@ select {
   font-weight: 600;
   letter-spacing: -0.02em;
   opacity: 0;
+  pointer-events: none; /* purely a title label; never intercept taps */
   transition: opacity 0.25s ease;
 }
 .topbar.show {
@@ -142,14 +143,39 @@ select {
 }
 
 .largetitle {
-  padding: 6px var(--pad) 2px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px var(--pad) 2px;
+}
+.largetitle .lt-text {
+  min-width: 0;
+  flex: 1;
 }
 .largetitle h1 {
   font-size: 33px;
   font-weight: 800;
   letter-spacing: -0.035em;
-  margin: 10px 0 3px;
+  margin: 2px 0 3px;
   line-height: 1.05;
+}
+.lt-action {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--fill2);
+  color: var(--ink);
+  margin-top: 2px;
+  transition: background 0.15s, transform 0.12s;
+}
+.lt-action:active {
+  background: var(--fill2-press);
+  transform: scale(0.92);
 }
 .largetitle .sub {
   color: var(--secondary);
@@ -370,25 +396,6 @@ select {
   flex-direction: column;
   gap: 9px;
   padding: 0 var(--pad);
-}
-
-.addbtn {
-  position: fixed;
-  top: calc(var(--safe-top) + 7px);
-  right: 12px;
-  z-index: 45;
-  color: var(--ink);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  transition: background 0.15s, transform 0.12s;
-}
-.addbtn:active {
-  background: var(--fill2);
-  transform: scale(0.92);
 }
 
 /* ---------- Empty state ---------- */

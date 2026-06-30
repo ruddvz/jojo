@@ -55,7 +55,6 @@ const CHANNEL_LABELS: Record<Channel, string> = {
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <div class="topbar" id="topbar">Jobs</div>
-  <button class="addbtn" id="addBtn" aria-label="Add job" data-action="add-job">${icon.plus({ size: 24 })}</button>
 
   <section class="view" id="v-jobs"></section>
   <section class="view" id="v-today"></section>
@@ -91,7 +90,6 @@ const tabbar = document.querySelector('.tabbar')!;
 const detailEl = document.getElementById('detail')!;
 const sheetEl = document.getElementById('sheet')!;
 const scrimEl = document.getElementById('scrim')!;
-const addBtn = document.getElementById('addBtn')!;
 
 // ---------------- Derived helpers ----------------
 function activeJobs(): Job[] {
@@ -123,7 +121,6 @@ function render(): void {
     views[t].classList.toggle('active', t === currentTab);
   }
   topbar.textContent = currentTab === 'jobs' ? 'Jobs' : currentTab === 'today' ? 'Today' : 'Materials';
-  addBtn.style.display = currentTab === 'jobs' ? '' : 'none';
 
   tabbar.querySelectorAll('button').forEach((b) => {
     b.classList.toggle('on', (b as HTMLElement).dataset.tab === currentTab);
@@ -145,8 +142,11 @@ function renderJobs(): void {
   const a = trackCount('A');
   views.jobs.innerHTML = `
     <div class="largetitle">
-      <h1>Jobs</h1>
-      <div class="sub"><b>${active}</b> active <span style="opacity:.4">·</span> <b>${a}</b> Track A</div>
+      <div class="lt-text">
+        <h1>Jobs</h1>
+        <div class="sub"><b>${active}</b> active <span style="opacity:.4">·</span> <b>${a}</b> Track A</div>
+      </div>
+      <button class="lt-action" data-action="add-job" aria-label="Add job">${icon.plus({ size: 22 })}</button>
     </div>
     <div class="segmented" id="seg">
       <button data-action="seg" data-seg="active" class="${jobsSeg === 'active' ? 'on' : ''}">Active</button>
@@ -221,8 +221,10 @@ function renderToday(): void {
 
   views.today.innerHTML = `
     <div class="largetitle">
-      <h1>Today</h1>
-      <div class="sub">${escapeHtml(dateStr)}</div>
+      <div class="lt-text">
+        <h1>Today</h1>
+        <div class="sub">${escapeHtml(dateStr)}</div>
+      </div>
     </div>
     <div class="section-header">Daily routine <span style="margin-left:auto;color:var(--ink-soft);font-weight:650">${doneCount}/${ROUTINE_ITEMS.length}</span></div>
     <div class="card">${routineHTML}</div>
@@ -251,7 +253,7 @@ function renderMaterials(): void {
       .join('');
 
   views.materials.innerHTML = `
-    <div class="largetitle"><h1>Materials</h1></div>
+    <div class="largetitle"><div class="lt-text"><h1>Materials</h1></div></div>
 
     <div class="section-header"><span class="sparkle">${icon.sparkleSm({ size: 15 })}</span> Cover letter generator</div>
     <div class="field">
