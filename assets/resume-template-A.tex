@@ -1,0 +1,63 @@
+\documentclass[10.5pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{charter}
+\usepackage{microtype}
+\usepackage[left=0.62in,right=0.62in,top=0.55in,bottom=0.5in]{geometry}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\definecolor{accent}{RGB}{15,90,55}
+\definecolor{mid}{RGB}{70,70,70}
+\definecolor{soft}{RGB}{130,130,130}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\pagestyle{empty}
+\titleformat{\section}{\bfseries\small\color{accent}}{}{0pt}{}[\vspace{1pt}\rule{\linewidth}{0.6pt}]
+\titlespacing{\section}{0pt}{6pt}{4pt}
+\setlist[itemize]{label=\textcolor{accent}{$\circ$},leftmargin=1.35em,itemsep=0.9pt,topsep=2pt,parsep=0pt}
+\newcommand{\jt}[4]{\noindent\begin{tabularx}{\linewidth}{@{}X r@{}}\textbf{#1} {\small\color{soft}\textit{#2}} & {\small\color{soft}\textit{#3}}\\\end{tabularx}\par\vspace{1pt}{\small\color{mid}#4}}
+\newcommand{\edu}[4]{\noindent\begin{tabularx}{\linewidth}{@{}X r@{}}\textbf{#1} & {\small\color{soft}\textit{#3}}\\\end{tabularx}\par\vspace{1.5pt}{\small\color{mid}#2}\par}
+\newcommand{\hd}[2]{\noindent\begin{tabularx}{\linewidth}{@{}X r@{}}#1 & #2\\\end{tabularx}}
+\begin{document}
+{\Large\bfseries Rudrakumar Patel}\\[2pt]
+{\small\color{mid}London, ON \quad\textbar\quad 519-729-2391 \quad\textbar\quad pvr6675@gmail.com}\par\vspace{4pt}
+\rule{\linewidth}{0.6pt}\vspace{2pt}
+
+\section{Professional Summary}
+{\small\color{mid}Architectural and construction technology graduate with hands-on AutoCAD and Revit experience developed across three semesters of design projects covering 2D drawings, 3D modelling, and full construction documentation. Comfortable reviewing drawings for conformity and coordination and communicating clearly with a project team. Backed by over four years of manufacturing and warehouse experience where dimensional precision, documentation accuracy, and adherence to specifications were part of every shift.}
+
+\section{Education}
+\edu{Architecture: Construction Engineering Technology \textendash{} Conestoga College, Kitchener, ON}{AutoCAD, Revit, 3D modelling, technical drawing, blueprint reading, and construction documentation across three semesters of major design projects.}{Sep 2021 \textendash{} Apr 2023}{}
+\vspace{7pt}
+\edu{Interior Decorating \textendash{} Conestoga College, Kitchener, ON}{AutoCAD, space planning, and design presentation.}{Sep 2023 \textendash{} Apr 2025}{}
+
+\section{Core Skills and Qualifications}
+\noindent\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.27\linewidth} X@{}}Drafting \& Design & AutoCAD, Revit, Building Information Modelling (BIM), Technical Drawing, Construction Documentation\\[2pt]Coordination & Drawing Review \& Conformity Checking, Conflict \& Clarification Identification, Stakeholder Communication\\[2pt]Technical Precision & Dimensional Accuracy, Engineering Specifications, Micrometers, Calipers, Gauges\\[2pt]Software \& Tools & Microsoft Office (Excel, Word), Adobe Creative Suite\\[2pt]\end{tabularx}
+
+\section{Professional Experience}
+\jt{Production \& Assembly Line Operator \textendash{} Linamar (CAMTAC Division)}{}{Guelph, ON \quad\textbar\quad Oct 2021 \textendash{} Dec 2022}{}
+\begin{itemize}
+\item Operated CNC and mechanical equipment on a high-speed automotive production line, maintaining consistent output and dimensional accuracy across large volumes.
+\item Performed precision quality checks using micrometers, calipers, and gauges, verifying part dimensions against engineering specifications and escalating deviations immediately.
+\item Used an overhead hand crane to safely lift and position raw engine parts, following strict load-handling and safety protocols.
+\item Conducted visual defect inspections each shift and carried out routine equipment cleaning and basic mechanical checks.
+\end{itemize}
+\vspace{6pt}
+\jt{Warehouse Associate \textendash{} Inventory \& Logistics \textendash{} Organigram Global}{}{London, ON \quad\textbar\quad Jun 2025 \textendash{} May 2026}{}
+\begin{itemize}
+\item Maintained precise inventory records through manual stock counts and structured documentation in a regulated, GMP-compliant facility.
+\item Coordinated material movement between receiving and storage and resolved discrepancies through proper channels.
+\item Upheld all safety and sanitation protocols, supporting a clean, organised floor and a strong safety record.
+\end{itemize}
+\vspace{6pt}
+\jt{Warehouse Associate / Order Picker Operator \textendash{} Domain Logistics}{}{Guelph, ON \quad\textbar\quad Jan 2023 \textendash{} May 2025}{}
+\begin{itemize}
+\item Used RF scanners and WMS platforms for real-time inventory tracking and precise order fulfilment across a large SKU range.
+\item Conducted regular cycle counts and stock audits, maintaining high data accuracy and clear discrepancy reports.
+\item Maintained thorough documentation for discrepancies, returns, and product labelling in line with facility SOPs.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,206 @@
+[
+  {
+    "title": "Architectural Technician",
+    "employer": "a+LiNK Architecture",
+    "location": "London, ON",
+    "noc": "22210",
+    "channel": "email",
+    "commute": "in",
+    "status": "toapply",
+    "gap": false,
+    "url": "",
+    "wage": "",
+    "requirements": [
+      {
+        "text": "AutoCAD / Revit",
+        "done": false
+      },
+      {
+        "text": "Cover letter",
+        "done": false
+      }
+    ],
+    "notes": "High-priority Track A. Apply via their site/email. (Need apply URL.)"
+  },
+  {
+    "title": "Architectural Technician",
+    "employer": "Zedd Architecture",
+    "location": "London, ON",
+    "noc": "22210",
+    "channel": "email",
+    "commute": "in",
+    "status": "toapply",
+    "gap": false,
+    "url": "",
+    "wage": "",
+    "requirements": [
+      {
+        "text": "AutoCAD / Revit",
+        "done": false
+      },
+      {
+        "text": "Cover letter",
+        "done": false
+      }
+    ],
+    "notes": "High-priority Track A. Apply via their site/email. (Need apply URL.)"
+  },
+  {
+    "title": "CNC Mill Operator / Machinist",
+    "employer": "Autotube",
+    "location": "Strathroy, ON",
+    "noc": "72100",
+    "channel": "email",
+    "commute": "in",
+    "status": "toapply",
+    "gap": false,
+    "url": "mevans@autotube.com",
+    "wage": "",
+    "requirements": [
+      {
+        "text": "Resume",
+        "done": false
+      },
+      {
+        "text": "Cover letter",
+        "done": false
+      }
+    ],
+    "notes": "Apply by email to mevans@autotube.com."
+  },
+  {
+    "title": "Welder / Fabricator",
+    "employer": "Dairy Lane Systems",
+    "location": "Komoka, ON",
+    "noc": "72106",
+    "channel": "indeed",
+    "commute": "in",
+    "status": "toapply",
+    "gap": true,
+    "url": "https://to.indeed.com/aagqqllmjnrf",
+    "wage": "DOE",
+    "requirements": [
+      {
+        "text": "1-5 yrs MIG welding (GAP)",
+        "done": false
+      },
+      {
+        "text": "Read blueprints + welding symbols",
+        "done": false
+      },
+      {
+        "text": "Valid G licence + clean abstract",
+        "done": false
+      },
+      {
+        "text": "Lift 50 lbs",
+        "done": false
+      }
+    ],
+    "notes": "Day shift Mon-Fri, in range. Honest gap: welding hours."
+  },
+  {
+    "title": "Facilities Maintenance Technician",
+    "employer": "Youth Opportunities Unlimited",
+    "location": "London, ON",
+    "noc": "72400",
+    "channel": "indeed",
+    "commute": "in",
+    "status": "toapply",
+    "gap": false,
+    "url": "https://to.indeed.com/aawgrppfj87r",
+    "wage": "",
+    "requirements": [
+      {
+        "text": "Pull full description to confirm",
+        "done": false
+      }
+    ],
+    "notes": "In London. Broad maintenance role, attainable."
+  },
+  {
+    "title": "CNC Machinist",
+    "employer": "Masco",
+    "location": "St. Thomas, ON",
+    "noc": "72100",
+    "channel": "indeed",
+    "commute": "in",
+    "status": "lead",
+    "gap": true,
+    "url": "https://to.indeed.com/aaqwghcwtdpt",
+    "wage": "$43.48-47.83/hr",
+    "requirements": [
+      {
+        "text": "Blueprint reading",
+        "done": false
+      },
+      {
+        "text": "CNC programming (Citizen/Hanwha/Miyano)",
+        "done": false
+      },
+      {
+        "text": "Swiss-style set-up (Fanuc)",
+        "done": false
+      },
+      {
+        "text": "429A Certificate of Qualification (GAP)",
+        "done": false
+      },
+      {
+        "text": "OSSD",
+        "done": false
+      }
+    ],
+    "notes": "Top pay but a journeyman posting. Decide before investing."
+  },
+  {
+    "title": "Industrial Mechanic (Millwright)",
+    "employer": "3 Step Recruitment",
+    "location": "Thamesford, ON",
+    "noc": "72400",
+    "channel": "indeed",
+    "commute": "in",
+    "status": "lead",
+    "gap": true,
+    "url": "https://to.indeed.com/aax4h696wkt2",
+    "wage": "",
+    "requirements": [
+      {
+        "text": "433A licence likely (GAP)",
+        "done": false
+      },
+      {
+        "text": "Pull full description",
+        "done": false
+      }
+    ],
+    "notes": "Confirm helper-level entry."
+  },
+  {
+    "title": "CAD Designer (12-mo contract)",
+    "employer": "General Dynamics",
+    "location": "London, ON",
+    "noc": "22212",
+    "channel": "assess",
+    "commute": "far",
+    "status": "lead",
+    "gap": true,
+    "url": "",
+    "wage": "",
+    "requirements": [
+      {
+        "text": "AutoCAD",
+        "done": false
+      },
+      {
+        "text": "Siemens NX (GAP)",
+        "done": false
+      },
+      {
+        "text": "Assessment",
+        "done": false
+      }
+    ],
+    "notes": "NX software gap + assessment. Decide if proceeding."
+  }
+]

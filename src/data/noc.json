@@ -1,0 +1,210 @@
+[
+  {
+    "code": "22210",
+    "name": "Architectural Technician",
+    "teer": 2,
+    "track": "A",
+    "sowp": true,
+    "pr": "Express Entry / OINP"
+  },
+  {
+    "code": "22212",
+    "name": "Drafting / CAD Technician",
+    "teer": 2,
+    "track": "A",
+    "sowp": true,
+    "pr": "Express Entry / OINP"
+  },
+  {
+    "code": "22300",
+    "name": "Civil Engineering Technician",
+    "teer": 2,
+    "track": "A",
+    "sowp": true,
+    "pr": "Express Entry / OINP"
+  },
+  {
+    "code": "22303",
+    "name": "Construction Estimator",
+    "teer": 2,
+    "track": "A",
+    "sowp": true,
+    "pr": "Express Entry / OINP"
+  },
+  {
+    "code": "22234",
+    "name": "Building / Construction Inspector",
+    "teer": 2,
+    "track": "A",
+    "sowp": true,
+    "pr": "Express Entry / OINP"
+  },
+  {
+    "code": "72100",
+    "name": "CNC Operator / Machinist Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72101",
+    "name": "Tool & Die Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72102",
+    "name": "Sheet Metal Worker",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72104",
+    "name": "Boilermaker",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72105",
+    "name": "Ironworker / Structural Metal",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72106",
+    "name": "Welder / Fabricator Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72200",
+    "name": "Electrician Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72300",
+    "name": "Plumber Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72310",
+    "name": "Carpenter / Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72311",
+    "name": "Cabinetmaker",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72400",
+    "name": "Industrial Mechanic / Millwright Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72401",
+    "name": "HVAC Technician Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "72402",
+    "name": "Refrigeration Mechanic Helper",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "73100",
+    "name": "Concrete Finisher",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "73102",
+    "name": "Plasterer / Drywall Installer",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "73110",
+    "name": "Tilesetter / Floor Covering",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "73111",
+    "name": "Roofer / Shingler",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "73112",
+    "name": "Painter & Decorator",
+    "teer": 3,
+    "track": "B",
+    "sowp": true,
+    "pr": "Federal Skilled Trades"
+  },
+  {
+    "code": "75101",
+    "name": "Warehouse / Order Picker",
+    "teer": 4,
+    "track": "N",
+    "sowp": false,
+    "pr": "None - income only"
+  },
+  {
+    "code": "75110",
+    "name": "General Labourer / Machine Op",
+    "teer": 4,
+    "track": "N",
+    "sowp": false,
+    "pr": "None - income only"
+  },
+  {
+    "code": "other",
+    "name": "Other / confirm NOC",
+    "teer": 0,
+    "track": "N",
+    "sowp": false,
+    "pr": "Confirm with employer"
+  }
+]

@@ -1,0 +1,95 @@
+# 05 — Rudra profile (SOURCE OF TRUTH)
+
+All facts below are fixed. Never invent, alter, or pad. The machine-readable version is `data/profile.json` — use that in code.
+
+```json
+{
+  "name": "Rudrakumar Patel",
+  "location": "London, ON",
+  "commute_km": "25-40",
+  "phone": "519-729-2391",
+  "email": "pvr6675@gmail.com",
+  "education": [
+    {
+      "program": "Architecture: Construction Engineering Technology",
+      "school": "Conestoga College, Kitchener, ON",
+      "dates": "Sep 2021 - Apr 2023",
+      "detail": "AutoCAD, Revit, 3D modelling, technical drawing, blueprint reading, and construction documentation across three semesters of major design projects."
+    },
+    {
+      "program": "Interior Decorating",
+      "school": "Conestoga College, Kitchener, ON",
+      "dates": "Sep 2023 - Apr 2025",
+      "detail": "AutoCAD, space planning, and design presentation."
+    }
+  ],
+  "experience": [
+    {
+      "title": "Warehouse Associate - Inventory & Logistics",
+      "company": "Organigram Global",
+      "location": "London, ON",
+      "dates": "Jun 2025 - May 2026",
+      "bullets": [
+        "Maintained precise inventory records through manual stock counts and structured documentation in a regulated, GMP-compliant facility.",
+        "Built shipment-ready pallets and supported loading and unloading operations.",
+        "Coordinated material movement between receiving and storage and resolved discrepancies through proper channels.",
+        "Performed repetitive lifting of materials up to 45 lbs across full shifts while following safety and sanitation standards."
+      ]
+    },
+    {
+      "title": "Warehouse Associate / Order Picker Operator",
+      "company": "Domain Logistics",
+      "location": "Guelph, ON",
+      "dates": "Jan 2023 - May 2025",
+      "bullets": [
+        "Used RF scanners and WMS platforms for real-time inventory tracking and precise order fulfilment across a large SKU range.",
+        "Conducted regular cycle counts and stock audits, maintaining high data accuracy and clear discrepancy reports.",
+        "Operated an Order Picker lift truck at height to retrieve and restock product safely.",
+        "Maintained thorough documentation for discrepancies, returns, and product labelling in line with facility SOPs."
+      ]
+    },
+    {
+      "title": "Production & Assembly Line Operator",
+      "company": "Linamar (CAMTAC Division)",
+      "location": "Guelph, ON",
+      "dates": "Oct 2021 - Dec 2022",
+      "bullets": [
+        "Operated CNC and mechanical equipment on a high-speed automotive production line, maintaining consistent output and dimensional accuracy.",
+        "Performed precision quality checks using micrometers, calipers, and gauges, verifying part dimensions against engineering specifications and escalating deviations.",
+        "Used an overhead hand crane to safely lift and position raw engine parts following strict load-handling protocols.",
+        "Conducted visual defect inspections each shift and carried out routine equipment cleaning and basic mechanical checks."
+      ]
+    }
+  ],
+  "skill_bank": {
+    "Drafting & Design": "AutoCAD, Revit, Building Information Modelling (BIM), Blueprint & Schematic Reading, Technical Drawing, Construction Documentation",
+    "Coordination": "Drawing Review & Conformity Checking, Conflict & Clarification Identification, Stakeholder Communication",
+    "Quality & Measurement": "Micrometers, Calipers, Gauges, Dimensional Accuracy, Engineering Specifications, Visual Inspection",
+    "Equipment": "CNC Machinery, Overhead Hand Crane, Order Picker Lift Truck, Walkie Rider, RF Scanners",
+    "Safety & Compliance": "PPE, SOPs, GMP Standards, Lockout/Tagout, Hazard Reporting",
+    "Software & Tools": "Microsoft Office (Excel, Word), Adobe Creative Suite",
+    "Workplace": "Documentation & Recordkeeping, Time Management, Team Collaboration"
+  },
+  "rules": {
+    "spelling": "Canadian English (colour, organise, fulfil, modelling, labour, centre)",
+    "no_em_dashes": true,
+    "resume_one_page": true,
+    "never_invent": true,
+    "do_not_claim": [
+      "welding hours (MIG/TIG) unless true",
+      "any certificate or ticket he does not hold"
+    ],
+    "accent_rgb": [
+      15,
+      90,
+      55
+    ],
+    "font": "Charter (Bitstream Charter / close serif)"
+  }
+}
+```
+
+## Honesty guardrails
+- Do not claim welding hours (MIG/TIG) or any ticket/certificate he does not hold.
+- When a job needs something he lacks, flag it as a requirement marked "(GAP)" — never write it into his résumé as if he has it.
+- Mirror a posting's wording only where it is genuinely true of his background.
