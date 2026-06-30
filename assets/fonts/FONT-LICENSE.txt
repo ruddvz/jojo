@@ -1,0 +1,4 @@
+IBM Plex Serif is licensed under the SIL Open Font License 1.1 (OFL-1.1).
+Free to bundle and embed in the app and its generated PDFs.
+Source: https://github.com/IBM/plex
+This is the bundled substitute for Charter (the face used in the LaTeX references).
