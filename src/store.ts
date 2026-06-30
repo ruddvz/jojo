@@ -95,6 +95,31 @@ export function addJobs(newJobs: Job[]): void {
   emit();
 }
 
+// Identity for de-duplication: same title + employer (case/space-insensitive).
+function jobKey(j: { title: string; employer: string }): string {
+  return `${j.title.trim().toLowerCase()}|${j.employer.trim().toLowerCase()}`;
+}
+
+// Add only jobs not already present — used by paste-add and link-import so a
+// daily Indeed search never piles up duplicates.
+export function addJobsDedup(newJobs: Job[]): { added: number; skipped: number } {
+  const seen = new Set(jobs.map(jobKey));
+  let added = 0;
+  let skipped = 0;
+  for (const j of newJobs) {
+    const k = jobKey(j);
+    if (seen.has(k)) {
+      skipped++;
+      continue;
+    }
+    seen.add(k);
+    jobs.push(j);
+    added++;
+  }
+  if (added) emit();
+  return { added, skipped };
+}
+
 export function deleteJob(id: string): void {
   jobs = jobs.filter((j) => j.id !== id);
   emit();

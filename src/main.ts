@@ -7,7 +7,7 @@ import {
   allJobs,
   getJob,
   upsertJob,
-  addJobs,
+  addJobsDedup,
   deleteJob,
   setStatus,
   markApplied,
@@ -745,12 +745,12 @@ document.addEventListener('click', async (ev) => {
         if (parsed.length === 0) {
           toast('Nothing to add');
         } else {
-          addJobs(parsed);
+          const { added, skipped } = addJobsDedup(parsed);
           closeSheet();
           currentTab = 'jobs';
           jobsSeg = 'active';
           render();
-          toast(`Added ${parsed.length} job${parsed.length > 1 ? 's' : ''}`);
+          toast(importSummary(added, skipped));
         }
       }
       break;
@@ -855,7 +855,48 @@ function openApply(id: string): void {
   window.open(url, '_blank');
 }
 
+// ---------------- Link import (daily Indeed → app) ----------------
+function importSummary(added: number, skipped: number): string {
+  if (!added) return skipped ? `Already up to date · ${skipped} known` : 'Nothing to add';
+  return `Added ${added} job${added > 1 ? 's' : ''}${skipped ? ` · ${skipped} already in list` : ''}`;
+}
+
+// Accepts a paste-block payload via the URL so an external link can add jobs:
+//   ?paste=<url-encoded pipe block>   (easiest to generate)
+//   ?add=<base64url pipe block>  or  #add=<base64url>   (robust against URL chars)
+function readImportPayload(): string | null {
+  const url = new URL(window.location.href);
+  const paste = url.searchParams.get('paste');
+  if (paste) return paste;
+  const b64 =
+    url.searchParams.get('add') || (url.hash.startsWith('#add=') ? url.hash.slice(5) : '');
+  if (b64) {
+    try {
+      let s = b64.replace(/-/g, '+').replace(/_/g, '/');
+      while (s.length % 4) s += '=';
+      return decodeURIComponent(escape(atob(s)));
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function handleLinkImport(): void {
+  const payload = readImportPayload();
+  if (!payload) return;
+  // Strip the payload from the URL so a refresh doesn't re-import.
+  history.replaceState(null, '', import.meta.env.BASE_URL);
+  const parsed = parsePaste(payload);
+  if (!parsed.length) return;
+  const { added, skipped } = addJobsDedup(parsed);
+  currentTab = 'jobs';
+  jobsSeg = 'active';
+  setTimeout(() => toast(importSummary(added, skipped)), 400);
+}
+
 // ---------------- Boot ----------------
 load();
+handleLinkImport();
 subscribe(render);
 render();
