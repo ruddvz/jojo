@@ -281,6 +281,61 @@ select {
   display: inline-flex;
 }
 
+/* Job row: main area opens detail, trailing button applies instantly. */
+.jrow {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  min-height: 58px;
+}
+.jrow + .jrow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--pad);
+  right: 0;
+  height: 0.5px;
+  background: var(--separator);
+}
+.jrow-hit {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 6px 13px var(--pad);
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border-radius: 14px 0 0 14px;
+  transition: background 0.12s ease;
+}
+.jrow-hit:active {
+  background: var(--fill2);
+}
+.jrow > .chev {
+  align-self: center;
+  margin: 0 15px 0 3px;
+}
+.row-apply {
+  flex: none;
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  margin: 0 11px 0 4px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fill2);
+  color: var(--ink);
+  transition: background 0.15s, transform 0.12s;
+}
+.row-apply:active {
+  background: var(--ink);
+  color: #fff;
+  transform: scale(0.9);
+}
+
 /* ---------- Pills ---------- */
 .pill {
   display: inline-flex;

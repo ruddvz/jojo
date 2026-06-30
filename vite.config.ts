@@ -20,9 +20,13 @@ export default defineConfig({
         name: 'Jobs — Command Centre',
         short_name: 'Jobs',
         description: 'Personal job-search command centre.',
+        lang: 'en-CA',
+        dir: 'ltr',
         start_url: base,
         scope: base,
         display: 'standalone',
+        orientation: 'portrait',
+        categories: ['productivity', 'business'],
         background_color: '#F2F2F7',
         theme_color: '#FFFFFF',
         icons: [

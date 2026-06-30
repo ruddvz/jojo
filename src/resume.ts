@@ -3,6 +3,7 @@ import fontkit from '@pdf-lib/fontkit';
 import { PROFILE } from './data';
 import type { Job, Track } from './types';
 import { track as trackOf } from './triage';
+import { composeSummary } from './tailor';
 
 // ---- Page geometry (US Letter, points) ----
 const PAGE_W = 612;
@@ -125,12 +126,6 @@ const SKILLS_B: SkillRow[] = [
   },
 ];
 
-const SUMMARY_A =
-  'Architectural and construction technology graduate with hands-on AutoCAD and Revit experience developed across three semesters of design projects covering 2D drawings, 3D modelling, and full construction documentation. Comfortable reviewing drawings for conformity and coordination and communicating clearly with a project team. Backed by over four years of manufacturing and warehouse experience where dimensional precision, documentation accuracy, and adherence to specifications were part of every shift.';
-
-const SUMMARY_B =
-  'Production professional with direct CNC machine operation experience on a high-speed automotive line, paired with precision inspection using micrometers, calipers, and gauges. Comfortable reading blueprints, holding dimensional tolerances, and following strict SOPs across full shifts. Reliable and safety-focused, with a Construction Engineering Technology diploma adding solid blueprint and technical-drawing knowledge.';
-
 function jobKeywords(job: Job): string {
   return (
     job.title +
@@ -208,7 +203,7 @@ class Layout {
     const font = opts.font ?? this.f.reg;
     const color = opts.color ?? MID;
     const maxW = opts.maxW ?? M_LEFT + CONTENT_W - x;
-    const lead = opts.lead ?? size * 1.32;
+    const lead = opts.lead ?? size * 1.36;
     const lines = this.wrap(text, font, size, maxW);
     for (const line of lines) {
       this.y += size;
@@ -228,28 +223,35 @@ class Layout {
   }
 
   section(title: string) {
-    this.gap(8);
+    this.gap(10);
     this.text(title.toUpperCase(), { font: this.f.bold, size: S_SECTION, color: ACCENT, lead: S_SECTION });
     this.rule(0.6, ACCENT, 2.5);
     this.gap(5);
   }
 
-  // Left bold label + right soft date on one row, with an optional detail line under.
+  // Bold left title (wraps) + right soft date aligned to the first line, with an
+  // optional detail line under. Wrapping the left text prevents any overlap with
+  // the date for long programs/titles.
   titleRow(left: string, right: string, detail?: string) {
     const size = S_BODY;
-    const rightW = this.f.italic.widthOfTextAtSize(right, S_SMALL);
-    this.y += size;
-    this.page.drawText(left, { x: M_LEFT, y: this.at(), size, font: this.f.bold, color: INK });
-    if (right) {
-      this.page.drawText(right, {
-        x: M_LEFT + CONTENT_W - rightW,
-        y: this.at(),
-        size: S_SMALL,
-        font: this.f.italic,
-        color: SOFT,
-      });
-    }
-    this.y += size * 0.32;
+    const rightW = right ? this.f.italic.widthOfTextAtSize(right, S_SMALL) : 0;
+    const gap = right ? 12 : 0;
+    const leftMaxW = CONTENT_W - rightW - gap;
+    const lines = this.wrap(left, this.f.bold, size, leftMaxW);
+    lines.forEach((line, i) => {
+      this.y += size;
+      this.page.drawText(line, { x: M_LEFT, y: this.at(), size, font: this.f.bold, color: INK });
+      if (i === 0 && right) {
+        this.page.drawText(right, {
+          x: M_LEFT + CONTENT_W - rightW,
+          y: this.at(),
+          size: S_SMALL,
+          font: this.f.italic,
+          color: SOFT,
+        });
+      }
+      this.y += size * 0.3;
+    });
     if (detail) {
       this.gap(2);
       this.text(detail, { size: S_SMALL, color: MID });
@@ -278,7 +280,7 @@ class Layout {
       this.page.drawText(line, { x, y: this.at(), size, font: this.f.reg, color: MID });
       this.y += size * 0.34;
     });
-    this.gap(1.2);
+    this.gap(2.2);
   }
 
   // Two-column skill row: bold label left, value right.
@@ -311,16 +313,21 @@ function drawHeader(L: Layout, f: Fonts) {
   L.rule(0.6, ACCENT, 4);
 }
 
-function drawSummary(L: Layout, track: Track) {
+function drawSummary(L: Layout, summary: string) {
   L.section('Professional Summary');
-  L.text(track === 'A' ? SUMMARY_A : SUMMARY_B, { color: MID });
+  L.text(summary, { color: MID });
+}
+
+// Ranges use en dashes, never hyphens or em dashes (docs/07).
+function endash(s: string): string {
+  return s.replace(/\s-\s/g, ' – ');
 }
 
 function drawEducation(L: Layout) {
   L.section('Education');
   PROFILE.education.forEach((e, i) => {
-    if (i > 0) L.gap(5);
-    L.titleRow(`${e.program} – ${e.school}`, e.dates, e.detail);
+    if (i > 0) L.gap(7);
+    L.titleRow(endash(`${e.program} – ${e.school}`), endash(e.dates), e.detail);
   });
 }
 
@@ -332,9 +339,9 @@ function drawSkills(L: Layout, rows: SkillRow[]) {
 function drawExperience(L: Layout) {
   L.section('Professional Experience');
   experienceBlocks().forEach((block, i) => {
-    if (i > 0) L.gap(5);
+    if (i > 0) L.gap(7);
     const e = block.exp;
-    L.titleRow(`${e.title} – ${e.company}`, `${e.location}   |   ${e.dates}`);
+    L.titleRow(endash(`${e.title} – ${e.company}`), `${e.location}   |   ${endash(e.dates)}`, undefined);
     L.gap(1);
     block.bullets.forEach((b) => L.bullet(b));
   });
@@ -354,14 +361,15 @@ export async function generateResume(job: Job): Promise<Uint8Array> {
   const L = new Layout(page, f);
 
   drawHeader(L, f);
+  const summary = composeSummary(job, template);
 
   if (template === 'A') {
-    drawSummary(L, 'A');
+    drawSummary(L, summary);
     drawEducation(L);
     drawSkills(L, tailorSkills(SKILLS_A, kw));
     drawExperience(L);
   } else {
-    drawSummary(L, 'B');
+    drawSummary(L, summary);
     drawSkills(L, tailorSkills(SKILLS_B, kw));
     drawExperience(L);
     drawEducation(L);

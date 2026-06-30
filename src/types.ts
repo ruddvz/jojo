@@ -24,6 +24,9 @@ export interface Job {
   status: Status;
   requirements: Requirement[];
   notes: string;
+  // Optional hand-written (or Claude-written) tailored résumé summary line.
+  // When present it overrides the auto-composed summary. Always Rudra's own facts.
+  summary: string;
   added: number;
   appliedAt: number;
 }

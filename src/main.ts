@@ -22,6 +22,7 @@ import {
 import { track, verdict, isArchived, isIncomeOnly } from './triage';
 import { jobsListHTML, chipsFor } from './components';
 import { generateCoverLetter } from './coverletter';
+import { coverHighlights } from './tailor';
 import { icon } from './icons';
 import {
   escapeHtml,
@@ -35,7 +36,24 @@ import {
 } from './util';
 import type { Job, Status, Channel, Commute, Track } from './types';
 
-registerSW({ immediate: true });
+// Keep the installed PWA fresh: auto-reload once when a new service worker takes
+// over (skips the initial first-load claim so it doesn't reload on first visit),
+// and check for updates hourly for long-open sessions.
+if ('serviceWorker' in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  });
+}
+registerSW({
+  immediate: true,
+  onRegisteredSW(_swUrl, reg) {
+    if (reg) setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+  },
+});
 
 // ---------------- App state ----------------
 type Tab = 'jobs' | 'today' | 'materials';
@@ -329,6 +347,7 @@ function renderDetail(id: string, keepScroll = false): void {
     employer: job.employer,
     title: job.title,
     track: track(job),
+    highlights: coverHighlights(job),
   });
   const reqs = job.requirements
     .map(
@@ -344,11 +363,7 @@ function renderDetail(id: string, keepScroll = false): void {
     .map((s) => `<option value="${s}" ${job.status === s ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`)
     .join('');
 
-  const applyBtn = job.url
-    ? job.url.includes('@')
-      ? `<button class="btn line" data-action="apply-link" data-id="${job.id}">${icon.mail({ size: 19 })}Email application</button>`
-      : `<button class="btn line" data-action="apply-link" data-id="${job.id}">${icon.link({ size: 19 })}Open application</button>`
-    : '';
+  const applyBtn = job.url ? applyButtonHTML(job) : '';
 
   detailEl.innerHTML = `
     <div class="detailbar">
@@ -403,6 +418,30 @@ function renderDetail(id: string, keepScroll = false): void {
   `;
   detailEl.classList.add('open');
   detailEl.scrollTop = prevScroll;
+}
+
+// Channel-aware primary apply button in the detail view.
+function applyButtonHTML(job: Job): string {
+  const isEmail = job.url.includes('@') || job.channel === 'email';
+  let label: string;
+  let ic: string;
+  if (isEmail) {
+    label = 'Email application';
+    ic = icon.mail({ size: 19 });
+  } else if (job.channel === 'indeed') {
+    label = 'Apply on Indeed';
+    ic = icon.link({ size: 19 });
+  } else if (job.channel === 'career') {
+    label = 'Open company site';
+    ic = icon.link({ size: 19 });
+  } else if (job.channel === 'assess') {
+    label = 'Open assessment';
+    ic = icon.link({ size: 19 });
+  } else {
+    label = 'Open application';
+    ic = icon.link({ size: 19 });
+  }
+  return `<button class="btn line" data-action="apply-link" data-id="${job.id}">${ic}${label}</button>`;
 }
 
 function formatReq(text: string): string {
@@ -482,9 +521,14 @@ function openAddEdit(id?: string): void {
       j.notes || ''
     )}</textarea></div>
 
+    <div class="field"><label>Tailored résumé summary (optional)</label><textarea id="f_summary" rows="3" placeholder="Leave blank to auto-tailor from this job's requirements">${escapeHtml(
+      j.summary || ''
+    )}</textarea></div>
+    <div class="hint">Optional. If filled, this exact text is used as the résumé's Professional Summary for this job. Keep it honest — real skills only.</div>
+
     ${
       id
-        ? `<div class="btn-stack" style="margin-top:12px"><button class="btn danger" data-action="delete-job" data-id="${id}">Delete job</button></div>`
+        ? `<div class="btn-stack" style="margin-top:14px"><button class="btn danger" data-action="delete-job" data-id="${id}">Delete job</button></div>`
         : ''
     }
   `;
@@ -537,7 +581,7 @@ function openPasteAdd(): void {
       <button class="save" data-action="paste-save">Add</button>
     </div>
     <div class="hint">One job per line. Fields separated by <b>|</b>. Only Title is required.</div>
-    <div class="fmt">Title | Employer | NOC | Channel | Wage | Link | Notes</div>
+    <div class="fmt">Title | Employer | NOC | Channel | Wage | Link | Notes | Summary</div>
     <div class="field"><textarea id="pText" rows="8" placeholder="Architectural Technician | a+LiNK | 22210 | email | | | High priority"></textarea></div>
   `;
   openSheet();
@@ -549,7 +593,7 @@ function parsePaste(text: string): Job[] {
     const trimmed = line.trim();
     if (!trimmed) continue;
     const parts = trimmed.split('|').map((p) => p.trim());
-    const [title, employer, nocRaw, channelRaw, wage, link, notes] = parts;
+    const [title, employer, nocRaw, channelRaw, wage, link, notes, summary] = parts;
     if (!title) continue;
     const noc = guessNoc(`${nocRaw || ''} ${title}`);
     const channel = normalizeChannel(channelRaw);
@@ -562,6 +606,7 @@ function parsePaste(text: string): Job[] {
         wage: wage || '',
         url: link || '',
         notes: notes || '',
+        summary: summary || '',
         commute: 'in',
         status: 'toapply',
       })
@@ -682,6 +727,7 @@ document.addEventListener('click', async (ev) => {
       }
       break;
     case 'apply-link':
+    case 'row-apply':
       if (id) openApply(id);
       break;
     case 'resume-job':
@@ -715,15 +761,19 @@ document.addEventListener('click', async (ev) => {
       renderMaterials();
       break;
     case 'cl-generate':
-      syncCoverInputs();
-      coverState.text = generateCoverLetter({
-        employer: coverState.employer,
-        title: coverState.title,
-        track: coverState.track,
-        extra: coverState.extra,
-      });
-      renderMaterials();
-      target.classList?.add('shimmer');
+      {
+        syncCoverInputs();
+        const savedJob = coverState.jobId ? getJob(coverState.jobId) : undefined;
+        coverState.text = generateCoverLetter({
+          employer: coverState.employer,
+          title: coverState.title,
+          track: coverState.track,
+          extra: coverState.extra,
+          highlights: savedJob ? coverHighlights(savedJob) : [],
+        });
+        renderMaterials();
+        target.classList?.add('shimmer');
+      }
       break;
     case 'cl-copy':
       {
@@ -907,6 +957,7 @@ function saveJobFromSheet(): void {
     status: val('f_status') as Status,
     url: val('f_url'),
     notes: (document.getElementById('f_note') as HTMLTextAreaElement).value,
+    summary: (document.getElementById('f_summary') as HTMLTextAreaElement).value,
     requirements: sheetDraftReqs.filter((r) => r.text.trim()),
     gap: sheetDraftFlags.gap,
     ready: sheetDraftFlags.ready,

@@ -38,6 +38,7 @@ export function normalizeJob(raw: Partial<Job>): Job {
       ? raw.requirements.map((r) => ({ text: String(r.text || ''), done: !!r.done }))
       : [],
     notes: raw.notes || '',
+    summary: raw.summary || '',
     added: raw.added || Date.now(),
     appliedAt: raw.appliedAt || 0,
   };
