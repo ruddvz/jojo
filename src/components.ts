@@ -57,18 +57,31 @@ function subLine(job: Job): string {
   return html || '—';
 }
 
+function applyButton(job: Job): string {
+  const isEmail = job.url.includes('@');
+  const label = isEmail ? 'Email application' : 'Open application';
+  return `<button class="row-apply" data-action="row-apply" data-id="${job.id}" aria-label="${label}" title="${label}">${
+    isEmail ? icon.mail({ size: 18 }) : icon.link({ size: 18 })
+  }</button>`;
+}
+
 export function jobRow(job: Job): string {
   const badge = isArchived(job) ? statusPill(job) : pill(job);
-  return `<button class="row tappable" data-action="open-job" data-id="${job.id}">
-    <div class="row-main">
-      <div class="row-title">${escapeHtml(job.title || 'Untitled')}</div>
-      <div class="row-sub">${subLine(job)}</div>
-    </div>
-    <div class="row-end">
+  // Active jobs with a link/email get an instant Apply button; otherwise a chevron.
+  const trailing =
+    !isArchived(job) && job.url
+      ? applyButton(job)
+      : `<span class="chev">${icon.chevronRight({ size: 18 })}</span>`;
+  return `<div class="jrow">
+    <button class="jrow-hit" data-action="open-job" data-id="${job.id}">
+      <div class="row-main">
+        <div class="row-title">${escapeHtml(job.title || 'Untitled')}</div>
+        <div class="row-sub">${subLine(job)}</div>
+      </div>
       ${badge}
-      <span class="chev">${icon.chevronRight({ size: 18 })}</span>
-    </div>
-  </button>`;
+    </button>
+    ${trailing}
+  </div>`;
 }
 
 function sectionBlock(title: string, jobs: Job[]): string {

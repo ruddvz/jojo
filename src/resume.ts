@@ -3,6 +3,7 @@ import fontkit from '@pdf-lib/fontkit';
 import { PROFILE } from './data';
 import type { Job, Track } from './types';
 import { track as trackOf } from './triage';
+import { composeSummary } from './tailor';
 
 // ---- Page geometry (US Letter, points) ----
 const PAGE_W = 612;
@@ -124,12 +125,6 @@ const SKILLS_B: SkillRow[] = [
     keys: ['safety', 'ppe', 'sop', 'lockout', 'wsib', 'team', 'lift'],
   },
 ];
-
-const SUMMARY_A =
-  'Architectural and construction technology graduate with hands-on AutoCAD and Revit experience developed across three semesters of design projects covering 2D drawings, 3D modelling, and full construction documentation. Comfortable reviewing drawings for conformity and coordination and communicating clearly with a project team. Backed by over four years of manufacturing and warehouse experience where dimensional precision, documentation accuracy, and adherence to specifications were part of every shift.';
-
-const SUMMARY_B =
-  'Production professional with direct CNC machine operation experience on a high-speed automotive line, paired with precision inspection using micrometers, calipers, and gauges. Comfortable reading blueprints, holding dimensional tolerances, and following strict SOPs across full shifts. Reliable and safety-focused, with a Construction Engineering Technology diploma adding solid blueprint and technical-drawing knowledge.';
 
 function jobKeywords(job: Job): string {
   return (
@@ -311,9 +306,9 @@ function drawHeader(L: Layout, f: Fonts) {
   L.rule(0.6, ACCENT, 4);
 }
 
-function drawSummary(L: Layout, track: Track) {
+function drawSummary(L: Layout, summary: string) {
   L.section('Professional Summary');
-  L.text(track === 'A' ? SUMMARY_A : SUMMARY_B, { color: MID });
+  L.text(summary, { color: MID });
 }
 
 function drawEducation(L: Layout) {
@@ -354,14 +349,15 @@ export async function generateResume(job: Job): Promise<Uint8Array> {
   const L = new Layout(page, f);
 
   drawHeader(L, f);
+  const summary = composeSummary(job, template);
 
   if (template === 'A') {
-    drawSummary(L, 'A');
+    drawSummary(L, summary);
     drawEducation(L);
     drawSkills(L, tailorSkills(SKILLS_A, kw));
     drawExperience(L);
   } else {
-    drawSummary(L, 'B');
+    drawSummary(L, summary);
     drawSkills(L, tailorSkills(SKILLS_B, kw));
     drawExperience(L);
     drawEducation(L);
