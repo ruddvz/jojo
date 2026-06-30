@@ -16,6 +16,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png', 'fonts/*.ttf'],
       manifest: {
+        id: base,
         name: 'Jobs — Command Centre',
         short_name: 'Jobs',
         description: 'Personal job-search command centre.',

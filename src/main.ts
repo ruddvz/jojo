@@ -7,7 +7,7 @@ import {
   allJobs,
   getJob,
   upsertJob,
-  addJobs,
+  addJobsDedup,
   deleteJob,
   setStatus,
   markApplied,
@@ -23,7 +23,16 @@ import { track, verdict, isArchived, isIncomeOnly } from './triage';
 import { jobsListHTML, chipsFor } from './components';
 import { generateCoverLetter } from './coverletter';
 import { icon } from './icons';
-import { escapeHtml, copyText, downloadText, openPdf, toast } from './util';
+import {
+  escapeHtml,
+  copyText,
+  downloadText,
+  openPdf,
+  reservePdfTab,
+  closeTab,
+  toast,
+  confirmDialog,
+} from './util';
 import type { Job, Status, Channel, Commute, Track } from './types';
 
 registerSW({ immediate: true });
@@ -55,7 +64,6 @@ const CHANNEL_LABELS: Record<Channel, string> = {
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <div class="topbar" id="topbar">Jobs</div>
-  <button class="addbtn" id="addBtn" aria-label="Add job" data-action="add-job">${icon.plus({ size: 24 })}</button>
 
   <section class="view" id="v-jobs"></section>
   <section class="view" id="v-today"></section>
@@ -91,7 +99,6 @@ const tabbar = document.querySelector('.tabbar')!;
 const detailEl = document.getElementById('detail')!;
 const sheetEl = document.getElementById('sheet')!;
 const scrimEl = document.getElementById('scrim')!;
-const addBtn = document.getElementById('addBtn')!;
 
 // ---------------- Derived helpers ----------------
 function activeJobs(): Job[] {
@@ -123,7 +130,6 @@ function render(): void {
     views[t].classList.toggle('active', t === currentTab);
   }
   topbar.textContent = currentTab === 'jobs' ? 'Jobs' : currentTab === 'today' ? 'Today' : 'Materials';
-  addBtn.style.display = currentTab === 'jobs' ? '' : 'none';
 
   tabbar.querySelectorAll('button').forEach((b) => {
     b.classList.toggle('on', (b as HTMLElement).dataset.tab === currentTab);
@@ -145,8 +151,11 @@ function renderJobs(): void {
   const a = trackCount('A');
   views.jobs.innerHTML = `
     <div class="largetitle">
-      <h1>Jobs</h1>
-      <div class="sub"><b>${active}</b> active <span style="opacity:.4">·</span> <b>${a}</b> Track A</div>
+      <div class="lt-text">
+        <h1>Jobs</h1>
+        <div class="sub"><b>${active}</b> active <span style="opacity:.4">·</span> <b>${a}</b> Track A</div>
+      </div>
+      <button class="lt-action" data-action="add-job" aria-label="Add job">${icon.plus({ size: 22 })}</button>
     </div>
     <div class="segmented" id="seg">
       <button data-action="seg" data-seg="active" class="${jobsSeg === 'active' ? 'on' : ''}">Active</button>
@@ -221,8 +230,10 @@ function renderToday(): void {
 
   views.today.innerHTML = `
     <div class="largetitle">
-      <h1>Today</h1>
-      <div class="sub">${escapeHtml(dateStr)}</div>
+      <div class="lt-text">
+        <h1>Today</h1>
+        <div class="sub">${escapeHtml(dateStr)}</div>
+      </div>
     </div>
     <div class="section-header">Daily routine <span style="margin-left:auto;color:var(--ink-soft);font-weight:650">${doneCount}/${ROUTINE_ITEMS.length}</span></div>
     <div class="card">${routineHTML}</div>
@@ -251,7 +262,7 @@ function renderMaterials(): void {
       .join('');
 
   views.materials.innerHTML = `
-    <div class="largetitle"><h1>Materials</h1></div>
+    <div class="largetitle"><div class="lt-text"><h1>Materials</h1></div></div>
 
     <div class="section-header"><span class="sparkle">${icon.sparkleSm({ size: 15 })}</span> Cover letter generator</div>
     <div class="field">
@@ -310,9 +321,10 @@ function renderMaterials(): void {
 }
 
 // ---------------- Detail view ----------------
-function renderDetail(id: string): void {
+function renderDetail(id: string, keepScroll = false): void {
   const job = getJob(id);
   if (!job) return;
+  const prevScroll = keepScroll ? detailEl.scrollTop : 0;
   const letter = generateCoverLetter({
     employer: job.employer,
     title: job.title,
@@ -390,7 +402,7 @@ function renderDetail(id: string): void {
     </div>
   `;
   detailEl.classList.add('open');
-  detailEl.scrollTop = 0;
+  detailEl.scrollTop = prevScroll;
 }
 
 function formatReq(text: string): string {
@@ -430,9 +442,9 @@ function openAddEdit(id?: string): void {
       <span class="t">${id ? 'Edit job' : 'Add job'}</span>
       <button class="save" data-action="save-job">Save</button>
     </div>
-    <div class="field"><label>Title</label><input id="f_title" value="${escapeHtml(j.title || '')}" /></div>
-    <div class="field"><label>Employer</label><input id="f_emp" value="${escapeHtml(j.employer || '')}" /></div>
-    <div class="field"><label>Location</label><input id="f_loc" value="${escapeHtml(j.location || '')}" /></div>
+    <div class="field"><label>Title</label><input id="f_title" autocapitalize="words" value="${escapeHtml(j.title || '')}" /></div>
+    <div class="field"><label>Employer</label><input id="f_emp" autocapitalize="words" value="${escapeHtml(j.employer || '')}" /></div>
+    <div class="field"><label>Location</label><input id="f_loc" autocapitalize="words" value="${escapeHtml(j.location || '')}" /></div>
     <div class="field">
       <div class="field-row">
         <div><label>Commute</label><select id="f_commute">${commuteOptions}</select></div>
@@ -448,7 +460,7 @@ function openAddEdit(id?: string): void {
         <div><label>Status</label><select id="f_status">${statusOptions}</select></div>
       </div>
     </div>
-    <div class="field"><label>Apply link or email</label><input id="f_url" value="${escapeHtml(
+    <div class="field"><label>Apply link or email</label><input id="f_url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="https://…  or  name@company.com" value="${escapeHtml(
       j.url || ''
     )}" /></div>
 
@@ -577,14 +589,26 @@ function closeSheet(): void {
 }
 
 // ---------------- Resume generation ----------------
-async function doResume(job: Job): Promise<void> {
+// Disable a button while an async action runs (prevents double-tap).
+async function withBusy(btn: HTMLElement, fn: () => Promise<void>): Promise<void> {
+  if (btn.hasAttribute('disabled')) return;
+  btn.setAttribute('disabled', '');
+  try {
+    await fn();
+  } finally {
+    btn.removeAttribute('disabled');
+  }
+}
+
+async function doResume(job: Job, win?: Window | null): Promise<void> {
   toast('Generating résumé…');
   try {
     const { generateResume } = await import('./resume');
     const bytes = await generateResume(job);
-    openPdf(bytes, 'Rudrakumar Patel.pdf');
+    openPdf(bytes, 'Rudrakumar Patel.pdf', win);
   } catch (e) {
     console.error(e);
+    closeTab(win);
     toast('Could not generate PDF');
   }
 }
@@ -607,6 +631,8 @@ document.addEventListener('click', async (ev) => {
   switch (action) {
     case 'tab':
       currentTab = target.dataset.tab as Tab;
+      window.scrollTo(0, 0);
+      topbar.classList.remove('show');
       render();
       break;
     case 'seg':
@@ -643,7 +669,7 @@ document.addEventListener('click', async (ev) => {
     case 'toggle-req':
       if (id) {
         toggleRequirement(id, Number(target.dataset.i));
-        renderDetail(id);
+        renderDetail(id, true);
       }
       break;
     case 'set-status':
@@ -661,11 +687,17 @@ document.addEventListener('click', async (ev) => {
     case 'resume-job':
       if (id) {
         const j = getJob(id);
-        if (j) await doResume(j);
+        if (j) {
+          const win = reservePdfTab(); // open the tab inside the gesture (iOS)
+          await withBusy(target, () => doResume(j, win));
+        }
       }
       break;
     case 'resume-base':
-      await doResume(baseResumeJob(target.dataset.track as Track));
+      {
+        const win = reservePdfTab();
+        await withBusy(target, () => doResume(baseResumeJob(target.dataset.track as Track), win));
+      }
       break;
     case 'copy-letter':
       {
@@ -679,6 +711,7 @@ document.addEventListener('click', async (ev) => {
     // Cover letter generator (materials)
     case 'cl-track':
       coverState.track = target.dataset.track as Track;
+      coverState.text = '';
       renderMaterials();
       break;
     case 'cl-generate':
@@ -703,7 +736,16 @@ document.addEventListener('click', async (ev) => {
       toast('Backup downloaded');
       break;
     case 'import':
-      (document.getElementById('importFile') as HTMLInputElement)?.click();
+      {
+        const proceed =
+          allJobs().length === 0 ||
+          (await confirmDialog({
+            title: 'Import backup?',
+            message: 'This replaces all current jobs with the contents of the backup file.',
+            confirm: 'Choose file',
+          }));
+        if (proceed) (document.getElementById('importFile') as HTMLInputElement)?.click();
+      }
       break;
     // Add/Edit sheet
     case 'save-job':
@@ -711,9 +753,18 @@ document.addEventListener('click', async (ev) => {
       break;
     case 'delete-job':
       if (id) {
-        deleteJob(id);
-        closeSheet();
-        toast('Deleted');
+        const job = getJob(id);
+        const ok = await confirmDialog({
+          title: 'Delete this job?',
+          message: job ? `“${job.title}” will be removed permanently.` : undefined,
+          confirm: 'Delete',
+          danger: true,
+        });
+        if (ok) {
+          deleteJob(id);
+          closeSheet();
+          toast('Deleted');
+        }
       }
       break;
     case 'add-req':
@@ -745,12 +796,12 @@ document.addEventListener('click', async (ev) => {
         if (parsed.length === 0) {
           toast('Nothing to add');
         } else {
-          addJobs(parsed);
+          const { added, skipped } = addJobsDedup(parsed);
           closeSheet();
           currentTab = 'jobs';
           jobsSeg = 'active';
           render();
-          toast(`Added ${parsed.length} job${parsed.length > 1 ? 's' : ''}`);
+          toast(importSummary(added, skipped));
         }
       }
       break;
@@ -765,12 +816,13 @@ document.addEventListener('change', (ev) => {
     const sel = t as HTMLSelectElement;
     const id = t.closest('[data-action]')!.getAttribute('data-id')!;
     setStatus(id, sel.value as Status);
-    renderDetail(id);
+    renderDetail(id, true);
     return;
   }
   if (action === 'cl-job') {
     const sel = t as HTMLSelectElement;
     coverState.jobId = sel.value;
+    coverState.text = '';
     const job = getJob(sel.value);
     if (job) {
       coverState.employer = job.employer;
@@ -805,6 +857,23 @@ document.addEventListener('input', (ev) => {
   if (t.getAttribute('data-action') === 'req-text') {
     const i = Number(t.getAttribute('data-i'));
     if (sheetDraftReqs[i]) sheetDraftReqs[i].text = (t as HTMLInputElement).value;
+  }
+});
+
+// Enter in the "add requirement" field adds it without reaching for the + button.
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Enter') return;
+  const t = ev.target as HTMLElement;
+  if (t.id === 'reqNew') {
+    ev.preventDefault();
+    const input = t as HTMLInputElement;
+    const v = input.value.trim();
+    if (v) {
+      sheetDraftReqs.push({ text: v, done: false });
+      input.value = '';
+      renderDraftReqs();
+      input.focus();
+    }
   }
 });
 
@@ -855,7 +924,48 @@ function openApply(id: string): void {
   window.open(url, '_blank');
 }
 
+// ---------------- Link import (daily Indeed → app) ----------------
+function importSummary(added: number, skipped: number): string {
+  if (!added) return skipped ? `Already up to date · ${skipped} known` : 'Nothing to add';
+  return `Added ${added} job${added > 1 ? 's' : ''}${skipped ? ` · ${skipped} already in list` : ''}`;
+}
+
+// Accepts a paste-block payload via the URL so an external link can add jobs:
+//   ?paste=<url-encoded pipe block>   (easiest to generate)
+//   ?add=<base64url pipe block>  or  #add=<base64url>   (robust against URL chars)
+function readImportPayload(): string | null {
+  const url = new URL(window.location.href);
+  const paste = url.searchParams.get('paste');
+  if (paste) return paste;
+  const b64 =
+    url.searchParams.get('add') || (url.hash.startsWith('#add=') ? url.hash.slice(5) : '');
+  if (b64) {
+    try {
+      let s = b64.replace(/-/g, '+').replace(/_/g, '/');
+      while (s.length % 4) s += '=';
+      return decodeURIComponent(escape(atob(s)));
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function handleLinkImport(): void {
+  const payload = readImportPayload();
+  if (!payload) return;
+  // Strip the payload from the URL so a refresh doesn't re-import.
+  history.replaceState(null, '', import.meta.env.BASE_URL);
+  const parsed = parsePaste(payload);
+  if (!parsed.length) return;
+  const { added, skipped } = addJobsDedup(parsed);
+  currentTab = 'jobs';
+  jobsSeg = 'active';
+  setTimeout(() => toast(importSummary(added, skipped)), 400);
+}
+
 // ---------------- Boot ----------------
 load();
+handleLinkImport();
 subscribe(render);
 render();

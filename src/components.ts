@@ -11,13 +11,40 @@ import { escapeHtml } from './util';
 import { icon } from './icons';
 import type { Job } from './types';
 
+const STATUS_LABEL: Record<Job['status'], string> = {
+  toapply: 'To apply',
+  lead: 'Lead',
+  applied: 'Applied',
+  interview: 'Interview',
+  offer: 'Offer',
+  closed: 'Closed',
+};
+
 export function pill(job: Job): string {
   const v = verdict(job);
   return `<span class="pill ${v}"><span class="dot"></span>${verdictLabel(v)}</span>`;
 }
 
-// Single, ellipsised secondary line: employer · wage · reqs · Far.
+function statusPill(job: Job): string {
+  return `<span class="pill status">${STATUS_LABEL[job.status]}</span>`;
+}
+
+function daysAgo(ts: number): number {
+  return Math.floor((Date.now() - ts) / (24 * 3600 * 1000));
+}
+
+// Single, ellipsised secondary line. Active: employer · wage · reqs · Far.
+// Archived: employer · Applied Nd ago.
 function subLine(job: Job): string {
+  if (isArchived(job)) {
+    const parts: string[] = [];
+    if (job.employer) parts.push(escapeHtml(job.employer));
+    if (job.appliedAt > 0) {
+      const d = daysAgo(job.appliedAt);
+      parts.push(d === 0 ? 'today' : `${d}d ago`);
+    }
+    return parts.join('<span class="sep">·</span>') || '—';
+  }
   const parts: string[] = [];
   if (job.employer) parts.push(escapeHtml(job.employer));
   if (job.wage) parts.push(escapeHtml(job.wage));
@@ -31,13 +58,14 @@ function subLine(job: Job): string {
 }
 
 export function jobRow(job: Job): string {
+  const badge = isArchived(job) ? statusPill(job) : pill(job);
   return `<button class="row tappable" data-action="open-job" data-id="${job.id}">
     <div class="row-main">
       <div class="row-title">${escapeHtml(job.title || 'Untitled')}</div>
       <div class="row-sub">${subLine(job)}</div>
     </div>
     <div class="row-end">
-      ${pill(job)}
+      ${badge}
       <span class="chev">${icon.chevronRight({ size: 18 })}</span>
     </div>
   </button>`;

@@ -102,7 +102,7 @@ select {
 }
 .view {
   display: none;
-  padding: calc(var(--safe-top) + var(--bar-h) + 4px) 0 calc(var(--safe-bottom) + var(--tab-h) + 34px);
+  padding: calc(var(--safe-top) + 8px) 0 calc(var(--safe-bottom) + var(--tab-h) + 34px);
   min-height: 100vh;
 }
 .view.active {
@@ -135,6 +135,7 @@ select {
   font-weight: 600;
   letter-spacing: -0.02em;
   opacity: 0;
+  pointer-events: none; /* purely a title label; never intercept taps */
   transition: opacity 0.25s ease;
 }
 .topbar.show {
@@ -142,14 +143,39 @@ select {
 }
 
 .largetitle {
-  padding: 6px var(--pad) 2px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px var(--pad) 2px;
+}
+.largetitle .lt-text {
+  min-width: 0;
+  flex: 1;
 }
 .largetitle h1 {
   font-size: 33px;
   font-weight: 800;
   letter-spacing: -0.035em;
-  margin: 10px 0 3px;
+  margin: 2px 0 3px;
   line-height: 1.05;
+}
+.lt-action {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--fill2);
+  color: var(--ink);
+  margin-top: 2px;
+  transition: background 0.15s, transform 0.12s;
+}
+.lt-action:active {
+  background: var(--fill2-press);
+  transform: scale(0.92);
 }
 .largetitle .sub {
   color: var(--secondary);
@@ -291,6 +317,12 @@ select {
 .pill.backup .dot {
   background: #a0a0a6;
 }
+.pill.status {
+  background: var(--fill3);
+  color: #5a5a60;
+  font-weight: 600;
+  padding: 5px 11px;
+}
 
 /* ---------- Segmented control ---------- */
 .segmented {
@@ -370,25 +402,6 @@ select {
   flex-direction: column;
   gap: 9px;
   padding: 0 var(--pad);
-}
-
-.addbtn {
-  position: fixed;
-  top: calc(var(--safe-top) + 7px);
-  right: 12px;
-  z-index: 45;
-  color: var(--ink);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  transition: background 0.15s, transform 0.12s;
-}
-.addbtn:active {
-  background: var(--fill2);
-  transform: scale(0.92);
 }
 
 /* ---------- Empty state ---------- */
@@ -880,6 +893,78 @@ select {
   to {
     left: 135%;
   }
+}
+
+/* ---------- Confirm dialog ---------- */
+.confirm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(10, 10, 11, 0.4);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+.confirm-scrim.open {
+  opacity: 1;
+}
+.confirm-card {
+  width: 100%;
+  max-width: 300px;
+  background: rgba(252, 252, 253, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-pop);
+  transform: scale(0.92);
+  transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.confirm-scrim.open .confirm-card {
+  transform: scale(1);
+}
+.confirm-title {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  padding: 20px 20px 4px;
+  letter-spacing: -0.02em;
+}
+.confirm-msg {
+  font-size: 13.5px;
+  color: var(--secondary);
+  text-align: center;
+  padding: 0 20px 18px;
+  line-height: 1.4;
+}
+.confirm-title:last-of-type {
+  padding-bottom: 18px;
+}
+.confirm-actions {
+  display: flex;
+  border-top: 0.5px solid var(--separator-strong);
+}
+.confirm-btn {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: 510;
+}
+.confirm-btn.go {
+  font-weight: 680;
+}
+.confirm-btn.go.danger {
+  color: var(--danger);
+}
+.confirm-btn.cancel {
+  border-right: 0.5px solid var(--separator-strong);
+}
+.confirm-btn:active {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 /* ---------- Toast ---------- */
