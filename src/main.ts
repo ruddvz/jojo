@@ -36,7 +36,24 @@ import {
 } from './util';
 import type { Job, Status, Channel, Commute, Track } from './types';
 
-registerSW({ immediate: true });
+// Keep the installed PWA fresh: auto-reload once when a new service worker takes
+// over (skips the initial first-load claim so it doesn't reload on first visit),
+// and check for updates hourly for long-open sessions.
+if ('serviceWorker' in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  });
+}
+registerSW({
+  immediate: true,
+  onRegisteredSW(_swUrl, reg) {
+    if (reg) setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+  },
+});
 
 // ---------------- App state ----------------
 type Tab = 'jobs' | 'today' | 'materials';
