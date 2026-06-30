@@ -20,8 +20,9 @@ import {
   ROUTINE_ITEMS,
 } from './store';
 import { track, verdict, isArchived, isIncomeOnly } from './triage';
-import { jobsListHTML, tagFor, pill } from './components';
+import { jobsListHTML, chipsFor } from './components';
 import { generateCoverLetter } from './coverletter';
+import { icon } from './icons';
 import { escapeHtml, copyText, downloadText, openPdf, toast } from './util';
 import type { Job, Status, Channel, Commute, Track } from './types';
 
@@ -54,22 +55,31 @@ const CHANNEL_LABELS: Record<Channel, string> = {
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <div class="topbar" id="topbar">Jobs</div>
-  <button class="addbtn" id="addBtn" aria-label="Add job" data-action="add-job">+</button>
+  <button class="addbtn" id="addBtn" aria-label="Add job" data-action="add-job">${icon.plus({ size: 24 })}</button>
 
   <section class="view" id="v-jobs"></section>
   <section class="view" id="v-today"></section>
   <section class="view" id="v-materials"></section>
 
   <nav class="tabbar">
-    <button data-action="tab" data-tab="jobs"><span class="ic">▤</span>Jobs</button>
-    <button data-action="tab" data-tab="today"><span class="ic">◷</span><span class="badgewrap" id="todayBadge"></span>Today</button>
-    <button data-action="tab" data-tab="materials"><span class="ic">✦</span>Materials</button>
+    <button data-action="tab" data-tab="jobs"><span class="ic">${icon.jobs()}</span>Jobs</button>
+    <button data-action="tab" data-tab="today"><span class="ic">${icon.today()}</span><span id="todayBadge"></span>Today</button>
+    <button data-action="tab" data-tab="materials"><span class="ic">${icon.materials()}</span>Materials</button>
   </nav>
 
   <div id="detail"></div>
   <div class="scrim" id="scrim" data-action="close-sheet"></div>
   <div class="sheet" id="sheet"></div>
 `;
+
+// Compact top-bar title fades in once the large title scrolls away.
+window.addEventListener(
+  'scroll',
+  () => {
+    topbar.classList.toggle('show', window.scrollY > 46);
+  },
+  { passive: true }
+);
 
 const views: Record<Tab, HTMLElement> = {
   jobs: document.getElementById('v-jobs')!,
@@ -136,7 +146,7 @@ function renderJobs(): void {
   views.jobs.innerHTML = `
     <div class="largetitle">
       <h1>Jobs</h1>
-      <div class="sub">${active} active · ${a} Track A</div>
+      <div class="sub"><b>${active}</b> active <span style="opacity:.4">·</span> <b>${a}</b> Track A</div>
     </div>
     <div class="segmented" id="seg">
       <button data-action="seg" data-seg="active" class="${jobsSeg === 'active' ? 'on' : ''}">Active</button>
@@ -145,6 +155,13 @@ function renderJobs(): void {
     </div>
     <div>${jobsListHTML(allJobs(), jobsSeg)}</div>
   `;
+}
+
+function emptyStateInline(title: string, sub: string): string {
+  return `<div class="empty">
+    <div class="ico">${icon.flag({ size: 22 })}</div>
+    <div><div class="ttl">${escapeHtml(title)}</div><div>${escapeHtml(sub)}</div></div>
+  </div>`;
 }
 
 // ---------------- Today tab ----------------
@@ -159,55 +176,58 @@ function renderToday(): void {
   const ready = readyToApply();
   const follow = needsFollowUp();
 
+  const doneCount = routine.filter(Boolean).length;
   const routineHTML = ROUTINE_ITEMS.map(
     (item, i) => `
-    <div class="checkrow ${routine[i] ? 'done' : ''}" data-action="toggle-routine" data-i="${i}">
-      <div class="checkbox">${routine[i] ? '✓' : ''}</div>
+    <button class="checkrow ${routine[i] ? 'done' : ''}" data-action="toggle-routine" data-i="${i}">
+      <div class="checkbox">${icon.check({ size: 14 })}</div>
       <div class="ctext">${escapeHtml(item)}</div>
-    </div>`
+    </button>`
   ).join('');
 
   const readyHTML = ready.length
     ? `<div class="card">${ready
         .map(
           (j) => `<div class="row">
-            <div class="grow">
-              <div class="title">${escapeHtml(j.title)}</div>
-              <div class="meta">${pill(j)}<span>${escapeHtml(j.employer)}</span></div>
+            <div class="row-main">
+              <div class="row-title">${escapeHtml(j.title)}</div>
+              <div class="row-sub">${escapeHtml(j.employer)}</div>
             </div>
-            ${
-              j.url
-                ? `<button class="btn line" style="width:auto;padding:8px 14px" data-action="apply-link" data-id="${j.id}">Apply</button>`
-                : `<button class="btn line" style="width:auto;padding:8px 14px" data-action="open-job" data-id="${j.id}">Open</button>`
-            }
+            <div class="row-end">
+              ${
+                j.url
+                  ? `<button class="btn primary sm" data-action="apply-link" data-id="${j.id}">${icon.link({ size: 17 })}Apply</button>`
+                  : `<button class="btn line sm" data-action="open-job" data-id="${j.id}">Open</button>`
+              }
+            </div>
           </div>`
         )
         .join('')}</div>`
-    : `<div class="empty">Nothing queued — paste or add jobs</div>`;
+    : emptyStateInline('Nothing queued', 'Paste or add jobs to line up applications.');
 
   const followHTML = follow.length
     ? `<div class="card">${follow
         .map((j) => {
           const days = Math.floor((Date.now() - j.appliedAt) / (24 * 3600 * 1000));
           return `<button class="row tappable" data-action="open-job" data-id="${j.id}">
-            <div class="grow">
-              <div class="title">${escapeHtml(j.title)}</div>
-              <div class="meta"><span>${escapeHtml(j.employer)}</span><span>${days} days ago</span></div>
-            </div><div class="chev">›</div>
+            <div class="row-main">
+              <div class="row-title">${escapeHtml(j.title)}</div>
+              <div class="row-sub">${escapeHtml(j.employer)}<span class="sep">·</span>${days} days ago</div>
+            </div><div class="row-end"><span class="chev">${icon.chevronRight({ size: 18 })}</span></div>
           </button>`;
         })
         .join('')}</div>`
-    : `<div class="empty">No stale applications</div>`;
+    : emptyStateInline('All caught up', 'No applications waiting 5+ days.');
 
   views.today.innerHTML = `
     <div class="largetitle">
       <h1>Today</h1>
       <div class="sub">${escapeHtml(dateStr)}</div>
     </div>
-    <div class="section-header">Daily routine</div>
+    <div class="section-header">Daily routine <span style="margin-left:auto;color:var(--ink-soft);font-weight:650">${doneCount}/${ROUTINE_ITEMS.length}</span></div>
     <div class="card">${routineHTML}</div>
-    <div class="btn-stack" style="margin-top:10px">
-      <button class="btn" data-action="paste-add">Paste-add new jobs</button>
+    <div class="btn-stack" style="margin-top:12px">
+      <button class="btn" data-action="paste-add">${icon.inbox({ size: 19 })}Paste-add new jobs</button>
     </div>
     <div class="section-header">Ready to apply now</div>
     ${readyHTML}
@@ -233,7 +253,7 @@ function renderMaterials(): void {
   views.materials.innerHTML = `
     <div class="largetitle"><h1>Materials</h1></div>
 
-    <div class="section-header"><span class="sparkle">✦</span> Cover letter generator</div>
+    <div class="section-header"><span class="sparkle">${icon.sparkleSm({ size: 15 })}</span> Cover letter generator</div>
     <div class="field">
       <label>From a saved job</label>
       <select id="clJob" data-action="cl-job">${jobOptions}</select>
@@ -255,34 +275,34 @@ function renderMaterials(): void {
       <label>Optional custom line</label>
       <input id="clExtra" placeholder="One extra sentence (optional)" value="${escapeHtml(coverState.extra)}" />
     </div>
-    <div class="btn-stack" style="margin-top:8px">
-      <button class="btn primary gen-btn" id="clGen" data-action="cl-generate">Generate letter</button>
+    <div class="btn-stack" style="margin-top:10px">
+      <button class="btn primary gen-btn" id="clGen" data-action="cl-generate">${icon.sparkleSm({ size: 18 })}Generate letter</button>
     </div>
     ${
       coverState.text
-        ? `<div class="card" style="margin-top:12px"><pre class="covertext">${escapeHtml(
-            coverState.text
-          )}</pre></div>
-           <div class="btn-stack"><button class="btn line" data-action="cl-copy">Copy letter</button></div>`
+        ? `<div class="covercard" style="margin-top:14px">
+            <pre class="covertext">${escapeHtml(coverState.text)}</pre>
+            <div class="cover-actions"><button data-action="cl-copy">${icon.copy({ size: 17 })} Copy letter</button></div>
+          </div>`
         : ''
     }
 
     <div class="section-header">Base résumés</div>
     <div class="card">
       <div class="row">
-        <div class="grow"><div class="title">Template A — Technical</div><div class="emp">Drafting / NOC 22XXX</div></div>
-        <button class="btn line" style="width:auto;padding:8px 14px" data-action="resume-base" data-track="A">PDF</button>
+        <div class="row-main"><div class="row-title">Template A — Technical</div><div class="row-sub">Drafting · NOC 22XXX</div></div>
+        <div class="row-end"><button class="btn line sm" data-action="resume-base" data-track="A">${icon.doc({ size: 17 })}PDF</button></div>
       </div>
       <div class="row">
-        <div class="grow"><div class="title">Template B — Trades</div><div class="emp">Manufacturing / NOC 72–73XXX</div></div>
-        <button class="btn line" style="width:auto;padding:8px 14px" data-action="resume-base" data-track="B">PDF</button>
+        <div class="row-main"><div class="row-title">Template B — Trades</div><div class="row-sub">Manufacturing · NOC 72–73XXX</div></div>
+        <div class="row-end"><button class="btn line sm" data-action="resume-base" data-track="B">${icon.doc({ size: 17 })}PDF</button></div>
       </div>
     </div>
 
     <div class="section-header">Backup</div>
     <div class="btn-stack">
-      <button class="btn" data-action="export">Export backup (JSON)</button>
-      <button class="btn" data-action="import">Import backup (JSON)</button>
+      <button class="btn" data-action="export">${icon.download({ size: 19 })}Export backup (JSON)</button>
+      <button class="btn" data-action="import">${icon.upload({ size: 19 })}Import backup (JSON)</button>
       <input type="file" id="importFile" accept="application/json,.json" style="display:none" />
     </div>
     <div class="hint">Local-first. Nothing leaves this device unless you export it.</div>
@@ -301,10 +321,10 @@ function renderDetail(id: string): void {
   const reqs = job.requirements
     .map(
       (r, i) => `
-      <div class="checkrow ${r.done ? 'done' : ''}" data-action="toggle-req" data-id="${job.id}" data-i="${i}">
-        <div class="checkbox">${r.done ? '✓' : ''}</div>
+      <button class="checkrow ${r.done ? 'done' : ''}" data-action="toggle-req" data-id="${job.id}" data-i="${i}">
+        <div class="checkbox">${icon.check({ size: 14 })}</div>
         <div class="ctext">${formatReq(r.text)}</div>
-      </div>`
+      </button>`
     )
     .join('');
 
@@ -314,13 +334,13 @@ function renderDetail(id: string): void {
 
   const applyBtn = job.url
     ? job.url.includes('@')
-      ? `<button class="btn line" data-action="apply-link" data-id="${job.id}">Email application</button>`
-      : `<button class="btn line" data-action="apply-link" data-id="${job.id}">Open application</button>`
+      ? `<button class="btn line" data-action="apply-link" data-id="${job.id}">${icon.mail({ size: 19 })}Email application</button>`
+      : `<button class="btn line" data-action="apply-link" data-id="${job.id}">${icon.link({ size: 19 })}Open application</button>`
     : '';
 
   detailEl.innerHTML = `
     <div class="detailbar">
-      <button class="back" data-action="close-detail">‹ Jobs</button>
+      <button class="back" data-action="close-detail">${icon.chevronLeft({ size: 22 })} Jobs</button>
       <button class="edit" data-action="edit-job" data-id="${job.id}">Edit</button>
     </div>
     <div class="detailbody">
@@ -330,10 +350,10 @@ function renderDetail(id: string): void {
           job.location ? ' · ' + escapeHtml(job.location) : ''
         }</div>
       </div>
-      <div class="tagrow">${tagFor(job)}</div>
+      <div class="chiprow">${chipsFor(job)}</div>
 
-      <div class="btn-stack" style="margin-top:8px">
-        <button class="btn primary" data-action="resume-job" data-id="${job.id}">View / save résumé</button>
+      <div class="btn-stack" style="margin-top:10px">
+        <button class="btn primary" data-action="resume-job" data-id="${job.id}">${icon.doc({ size: 19 })}View / save résumé</button>
         ${applyBtn}
       </div>
 
@@ -351,18 +371,20 @@ function renderDetail(id: string): void {
           : ''
       }
 
-      <div class="section-header"><span class="sparkle">✦</span> Cover letter</div>
-      <div class="card"><pre class="covertext" id="detailLetter">${escapeHtml(letter)}</pre></div>
-      <div class="btn-stack"><button class="btn line" data-action="copy-letter">Copy letter</button></div>
+      <div class="section-header"><span class="sparkle">${icon.sparkleSm({ size: 15 })}</span> Cover letter</div>
+      <div class="covercard">
+        <pre class="covertext" id="detailLetter">${escapeHtml(letter)}</pre>
+        <div class="cover-actions"><button data-action="copy-letter">${icon.copy({ size: 17 })} Copy letter</button></div>
+      </div>
 
       <div class="section-header">Status</div>
       <div class="field"><select data-action="set-status" data-id="${job.id}">${statusOptions}</select></div>
 
-      <div class="btn-stack" style="margin-top:14px">
+      <div class="btn-stack" style="margin-top:16px">
         ${
           isArchived(job)
             ? ''
-            : `<button class="btn primary" data-action="mark-applied" data-id="${job.id}">Mark as applied</button>`
+            : `<button class="btn primary" data-action="mark-applied" data-id="${job.id}">${icon.check({ size: 19 })}Mark as applied</button>`
         }
       </div>
     </div>
@@ -434,7 +456,7 @@ function openAddEdit(id?: string): void {
     <div id="reqEdit"></div>
     <div class="req-edit-row">
       <input id="reqNew" placeholder="Add a requirement" />
-      <button data-action="add-req" style="color:#000;font-size:22px">＋</button>
+      <button class="req-add" data-action="add-req" aria-label="Add requirement">${icon.plus({ size: 20 })}</button>
     </div>
 
     <div class="checkline"><span>Has a gap to close</span><div class="switch ${
@@ -472,7 +494,7 @@ function renderDraftReqs(): void {
     .map(
       (r, i) => `<div class="req-edit-row">
         <input value="${escapeHtml(r.text)}" data-action="req-text" data-i="${i}" />
-        <button data-action="del-req" data-i="${i}">✕</button>
+        <button data-action="del-req" data-i="${i}" aria-label="Remove" style="transform:rotate(45deg)">${icon.plus({ size: 19 })}</button>
       </div>`
     )
     .join('');
